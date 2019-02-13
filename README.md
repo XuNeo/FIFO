@@ -1,3 +1,3 @@
-# fifo
+# FIFO
 
 A simple FIFO.
