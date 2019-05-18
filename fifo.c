@@ -152,7 +152,7 @@ fifo_err_def fifo_write(fifo_t *fifo, void *buff, uint32_t *plen){
     memcpy((uint8_t*)(fifo->buff)+fifo->write_index*byte_size, buff, temp*byte_size);
     //then write from start of buffer.
     if(write_len != temp) //we do need the second write.
-      memcpy((uint8_t*)(fifo->buff)+temp*byte_size, buff, (write_len-temp)*byte_size);
+      memcpy(fifo->buff, ((uint8_t*)buff) + temp*byte_size, (write_len-temp)*byte_size);
     /* !modify critical pointers. */
     FIFO_DIS_INT();
     fifo->write_index = write_len-temp;
@@ -195,7 +195,7 @@ fifo_err_def fifo_read(fifo_t *fifo, void *buff, uint32_t *plen)
     memcpy(buff, (uint8_t*)(fifo->buff)+fifo->read_index*byte_size, temp*byte_size);
     //then read from buffer start.
     if(read_len != temp)
-      memcpy(buff, (uint8_t*)(fifo->buff)+fifo->read_index*byte_size, (read_len-temp)*byte_size);
+      memcpy((uint8_t*)buff+temp*byte_size, (uint8_t*)(fifo->buff), (read_len-temp)*byte_size);
     /* enter critical area */
     FIFO_DIS_INT();
     fifo->read_index = read_len - temp;
