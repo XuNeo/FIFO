@@ -39,13 +39,13 @@
 
 #define FIFO_READ(fifo, data)\
   if(fifo->data_type == fifo_data_8bit)\
-    *(uint8_t*)data = ((uint8_t*)(fifo->buff))[fifo->write_index];\
+    *(uint8_t*)data = ((uint8_t*)(fifo->buff))[fifo->read_index];\
   else if(fifo->data_type == fifo_data_16bit)\
-    *(uint16_t*)data = ((uint16_t*)(fifo->buff))[fifo->write_index];\
+    *(uint16_t*)data = ((uint16_t*)(fifo->buff))[fifo->read_index];\
   else if(fifo->data_type == fifo_data_32bit)\
-    *(uint32_t*)data = ((uint32_t*)(fifo->buff))[fifo->write_index];\
+    *(uint32_t*)data = ((uint32_t*)(fifo->buff))[fifo->read_index];\
   else if(fifo->data_type == fifo_data_64bit)\
-    *(uint64_t*)data = ((uint64_t*)(fifo->buff))[fifo->write_index];\
+    *(uint64_t*)data = ((uint64_t*)(fifo->buff))[fifo->read_index];\
   else return fifo_err_data;
 
 /**
@@ -73,6 +73,16 @@ void fifo_init(fifo_t *fifo, fifo_data_t data_type, void *buff, uint32_t len)
 uint32_t fifo_status(fifo_t *fifo)
 {
   return fifo->data_count;
+}
+
+/**
+ * @brief Check if FIFO is full
+ * @return return 1 if FIFO is full, otherwise, return 0.
+*/
+int32_t fifo_is_full(fifo_t *fifo){
+  if(fifo->data_count == fifo->buff_size)
+    return 1;
+  return 0;
 }
 
 /**
