@@ -14,7 +14,8 @@ build:
     - gcc ./test/unit_test.c fifo.c -o ./test/unit_test_bin
   artifacts:
     paths:
-      - unit_test_bin
+      - ./test/unit_test_bin
+    expire_in: 1 week
   # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
   # cache:
   #   paths:
