@@ -11,7 +11,7 @@ build:
   # before_script:
   #   - apt update && apt -y install make autoconf
   script:
-    - gcc unit_test.c -o unit_test_bin
+    - gcc ./test/unit_test.c fifo.c -o ./test/unit_test_bin
   artifacts:
     paths:
       - unit_test_bin
@@ -24,4 +24,4 @@ build:
 test:
   stage: test
   script:
-    - ./unit_test.sh
+    - ./test/unit_test.sh
