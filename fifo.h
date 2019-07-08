@@ -31,8 +31,8 @@
 #define FIFO_VERSION_MINOR 0
 #define FIFO_VERSION_PATCH 2
 
-#define FIFO_DIS_INT() //disableInterrupts() //disable interrupt
-#define FIFO_EN_INT()  //enableInterrupts() //enable interrupt again.
+#define FIFO_DIS_INT() __disable_irq()//disableInterrupts() //disable interrupt
+#define FIFO_EN_INT()  __enable_irq()//enableInterrupts() //enable interrupt again.
 
 typedef enum
 {
