@@ -4,24 +4,6 @@
  * 
  * Copyright (c) 2019 Neo Xu
  * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- * 
 */
 #include "fifo.h"
 #include "string.h"
@@ -90,18 +72,18 @@ int32_t fifo_is_full(fifo_t *fifo){
  * @param data: the pointer to data to write.
  * @return fifo_err_ok if succeeded.
 */
-fifo_err_def fifo_push(fifo_t *fifo, void* data){
+fifo_err_t fifo_push(fifo_t *fifo, void* data){
   if(fifo->data_count >= fifo->buff_size)
     return fifo_err_full; //fifo is already full
   //write one data to fifo and modify windex and data_count
   FIFO_WRITE(fifo, data)
   //enter critical area
-  FIFO_DIS_INT();
+  FIFO_ENTER_CRITICAL();
   fifo->write_index ++;
   if(fifo->write_index == fifo->buff_size)
     fifo->write_index = 0;
   fifo->data_count ++;
-  FIFO_EN_INT();
+  FIFO_EXIT_CRITICAL();
   //exit critical area
   return fifo_err_ok;
 }
@@ -111,17 +93,17 @@ fifo_err_def fifo_push(fifo_t *fifo, void* data){
  * @para data: the pointer to save data read.
  * @return return fifo_err_ok if succeeded
 */
-fifo_err_def fifo_pop(fifo_t *fifo, void *data){
+fifo_err_t fifo_pop(fifo_t *fifo, void *data){
   if(data == 0) return fifo_err_nullp;
   if(fifo->data_count){ //we have data to read.
     FIFO_READ(fifo, data)
     //enter critical area.
-    FIFO_DIS_INT();
+    FIFO_ENTER_CRITICAL();
     fifo->read_index ++;
     if(fifo->read_index == fifo->buff_size)
       fifo->read_index = 0;  //rewind to zero.
     fifo->data_count --;
-    FIFO_EN_INT();
+    FIFO_EXIT_CRITICAL();
     //exit critical area.
     return fifo_err_ok;
   }
@@ -136,7 +118,7 @@ fifo_err_def fifo_pop(fifo_t *fifo, void *data){
  * @return fifo_err_ok if succeeded. If not all data are written, also return fifo_err_ok,
  *        read plen to determine the actual written data count.
 */
-fifo_err_def fifo_write(fifo_t *fifo, void *buff, uint32_t *plen){
+fifo_err_t fifo_write(fifo_t *fifo, void *buff, uint32_t *plen){
   uint32_t write_len = *plen;
   uint32_t temp;
   if(fifo->data_count >= fifo->buff_size)
@@ -150,10 +132,10 @@ fifo_err_def fifo_write(fifo_t *fifo, void *buff, uint32_t *plen){
     uint8_t byte_size = 1<<fifo->data_type;
     memcpy((uint8_t*)(fifo->buff)+fifo->write_index*byte_size, buff, write_len*byte_size);
     /* !modify critical pointers. */
-    FIFO_DIS_INT();
+    FIFO_ENTER_CRITICAL();
     fifo->write_index += write_len;
     fifo->data_count += write_len;
-    FIFO_EN_INT();
+    FIFO_EXIT_CRITICAL();
     /* exit critical area. */
   }
   else{ //we need two steps to write.
@@ -164,10 +146,10 @@ fifo_err_def fifo_write(fifo_t *fifo, void *buff, uint32_t *plen){
     if(write_len != temp) //we do need the second write.
       memcpy(fifo->buff, ((uint8_t*)buff) + temp*byte_size, (write_len-temp)*byte_size);
     /* !modify critical pointers. */
-    FIFO_DIS_INT();
+    FIFO_ENTER_CRITICAL();
     fifo->write_index = write_len-temp;
     fifo->data_count += write_len;
-    FIFO_EN_INT();
+    FIFO_EXIT_CRITICAL();
     /* exit critical area. */
   }
   *plen = write_len;
@@ -181,7 +163,7 @@ fifo_err_def fifo_write(fifo_t *fifo, void *buff, uint32_t *plen){
  *        actual data count read to buffer.
  * @return fifo_err_ok if succeeded.
 */
-fifo_err_def fifo_read(fifo_t *fifo, void *buff, uint32_t *plen)
+fifo_err_t fifo_read(fifo_t *fifo, void *buff, uint32_t *plen)
 {
   uint32_t read_len, temp;
   if(fifo->data_count == 0)
@@ -194,10 +176,10 @@ fifo_err_def fifo_read(fifo_t *fifo, void *buff, uint32_t *plen)
     uint8_t byte_size = 1<<fifo->data_type;
     memcpy(buff, (uint8_t*)(fifo->buff)+fifo->read_index*byte_size, read_len*byte_size);
     //enter critical area.
-    FIFO_DIS_INT();
+    FIFO_ENTER_CRITICAL();
     fifo->read_index += read_len;
     fifo->data_count -= read_len;
-    FIFO_EN_INT();
+    FIFO_EXIT_CRITICAL();
     //exit critical area.
   }
   else{//we need two steps to read all data.
@@ -207,10 +189,10 @@ fifo_err_def fifo_read(fifo_t *fifo, void *buff, uint32_t *plen)
     if(read_len != temp)
       memcpy((uint8_t*)buff+temp*byte_size, (uint8_t*)(fifo->buff), (read_len-temp)*byte_size);
     /* enter critical area */
-    FIFO_DIS_INT();
+    FIFO_ENTER_CRITICAL();
     fifo->read_index = read_len - temp;
     fifo->data_count -= read_len;
-    FIFO_EN_INT();
+    FIFO_EXIT_CRITICAL();
     //exit critical area.
   }
   *plen = read_len;

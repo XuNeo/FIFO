@@ -23,7 +23,7 @@ int main(void){
   uint8_t test_buff[BUFF_SIZE*2];
   uint32_t len;
   uint32_t data;
-  fifo_err_def err;
+  fifo_err_t err;
   
   printf("test started\n");
   //generate test data
